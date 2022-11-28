@@ -9,27 +9,32 @@ public class Libros implements Runnable{
     }
     @Override
     public void run() {
-
-        int libro1= reservarLibro();
-        int libro2=reservarLibro();
-        while(libro2 == libro1) {
+        int libro1;
+        int libro2;
+        do {
+            libro1 = reservarLibro();
             libro2 = reservarLibro();
-        }
+            //Para que no pueda salir dos veces el mismo libro
+        }while(libro1 == libro2) ;
         try {
-        synchronized (libros){
-
-            while(libros[libro1]||libros[libro2]){//Mientras q alguno de los libros este ocupada, esperaremos
+        synchronized (libros) {//Sincronizamos para que no pueden reservar el mismo libro 2 estudiantes alavez
+            while (libros[libro1] || libros[libro2]) {//Mientras q alguno de los libros este ocupada, esperaremos
                 libros.wait();
             }
-            libros[libro1]=true;
-            libros[libro2]=true;
-
+            libros[libro1] = true;
+            libros[libro2] = true;
         }
-            System.out.println("El estudiante "+id+" cogió los libros "+libro1+" y "+libro2);
-            Thread.sleep((int)(Math.random()*3000)+2000);
-            System.out.println("El estudiante "+id+" dejo libres los libros "+libro1+" y "+libro2);
-            libros.notifyAll();
-        }catch (Exception e){
+
+            System.out.println("El estudiante " + id + " cogió los libros " + libro1 + " y " + libro2);
+            Thread.sleep((int) (Math.random() * 3000) + 2000);
+            System.out.println("El estudiante " + id + " dejo libres los libros " + libro1 + " y " + libro2);
+
+            synchronized (libros) {//Sincronizamos para dejar libre los libros
+                libros.notifyAll();
+                libros[libro1] = false;
+                libros[libro2] = false;
+            }
+            }catch (Exception e){
             e.printStackTrace();
         }
     }
@@ -41,6 +46,8 @@ public class Libros implements Runnable{
     private int reservarLibro(){
         return (int)(Math.random()*9);
     }
+
+
     public static void main(String[] args) {
         for (int i = 0; i < 4; i++) {
             new Thread(new Libros(i+1)).start();
